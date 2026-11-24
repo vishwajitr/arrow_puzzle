@@ -2,6 +2,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
     <uses-permission android:name="android.permission.VIBRATE" />
+    <!-- screenOrientation="portrait" implies this feature as required, which hides the app from tablets, ChromeOS,
+         PCs and XR on Play. Declaring it optional keeps those devices; the game still runs in portrait. -->
+    <uses-feature android:name="android.hardware.screen.portrait" android:required="false" />
     <!-- pulled in by the Ads SDK's WorkManager dependency; the app runs no foreground services -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" tools:node="remove" />
     <application
