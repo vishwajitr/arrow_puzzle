@@ -1,0 +1,13 @@
+.gradle/
+build/
+local.properties
+.idea/
+.DS_Store
+*.jks
+*.keystore
+keystore.properties
+store/raw/
+*.aab
+old_scaffold/
+old_scaffold_backup.tar.gz
+.kotlin/
