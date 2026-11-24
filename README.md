@@ -16,7 +16,7 @@ Requires JDK 17 and the Android SDK (platform 37). `local.properties` must conta
 
 ## Publishing
 
-Release signing, store listing text, graphics, Data safety answers and upload steps: `store/LISTING.md`. Privacy policy: `PRIVACY.md`. Bump `VERSION_CODE` in `gradle.properties` for every upload.
+Release signing, store listing text, graphics, Data safety answers and upload steps: `store/LISTING.md`. Privacy policy: `PRIVACY.md`, published at https://github.com/vishwajitr/arrow_puzzle/blob/main/PRIVACY.md (the URL used in Play Console). Bump `VERSION_CODE` in `gradle.properties` for every upload.
 
 ## Layout
 

@@ -64,7 +64,7 @@ To refresh the graphics after a design change: put new 1080x2400 emulator screen
 - **Free / paid:** Free. **In-app purchases:** No.
 - **Contains ads:** Yes.
 - **Contact email:** your own (it is shown publicly on the store page).
-- **Privacy policy URL:** must be a public web page. The text is in `PRIVACY.md`: replace `[your-email@example.com]`, publish it on your website (or GitHub Pages), and paste the URL.
+- **Privacy policy URL:** `https://github.com/vishwajitr/arrow_puzzle/blob/main/PRIVACY.md` (the `PRIVACY.md` in this public repo, same as the Ludo app). Edits go live as soon as they are pushed to `main`.
 - **Target audience:** 13 and over only. Do not include under-13 age groups: that would put the app under Google's Families policy, which the current ad setup does not follow.
 - **Content rating (IARC questionnaire):** answer No to violence, blood, sexual content, profanity, drugs, gambling, user-generated content, sharing location and digital purchases. Expected: Everyone / PEGI 3.
 - **Data safety:** data is collected and shared by the AdMob SDK only. Follow AdMob's guide ("Prepare for Google Play's Data safety section") and declare at least **Device or other IDs** (advertising ID), **Approximate location**, **App interactions** and **Diagnostics**, collected and shared for **Advertising** and **Fraud prevention**, encrypted in transit. Game progress and settings stay on the device and are not collected.
