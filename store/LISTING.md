@@ -1,6 +1,6 @@
 # Google Play listing – Arrow Escape
 
-Package ID: `com.arrowescape.game` · Version 1.0.0 (code 1) · Upload file: `app/build/outputs/bundle/release/app-release.aab`
+Package ID: `com.vishwajit.arrowescape` (permanent once uploaded; the code package stays `com.arrowescape.game`) · Version 1.0.0 (code 1) · Upload file: `app/build/outputs/bundle/release/app-release.aab`
 
 ## 1. Create your upload key (once; only you should do this)
 
@@ -76,7 +76,7 @@ To refresh the graphics after a design change: put new 1080x2400 emulator screen
 The real ad unit ids live in `~/.gradle/gradle.properties` on your machine (`ARROW_ADMOB_*`), not in the repo. The project's `gradle.properties` holds Google's test ids, and a release built without the real ones prints a warning. Debug builds always use test ids.
 
 1. In AdMob, open **Privacy & messaging** and publish a **European regulations (GDPR)** message for Arrow Escape, so EEA/UK players see the consent form.
-2. Once the app is live, open the app in AdMob and **link it to its Play Store listing** (it was registered as "not on a store yet").
+2. Once the app is live, open the app in AdMob and **link it to its Play Store listing** (it was registered as "not on a store yet"): search for package `com.vishwajit.arrowescape`.
 3. Add an `app-ads.txt` file at the root of the developer website shown on your Play listing, with the line AdMob gives you.
 4. Never tap your own live ads. Use the debug build, or add your phone as a test device in AdMob.
 

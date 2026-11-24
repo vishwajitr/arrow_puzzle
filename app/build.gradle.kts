@@ -16,7 +16,7 @@ android {
     namespace = "com.arrowescape.game"
     compileSdk = 37
     defaultConfig {
-        applicationId = "com.arrowescape.game"
+        applicationId = "com.vishwajit.arrowescape" // Play package (permanent); the code package (namespace) stays com.arrowescape.game
         minSdk = 24
         targetSdk = 37
         versionCode = providers.gradleProperty("VERSION_CODE").get().toInt()

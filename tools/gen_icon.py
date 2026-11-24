@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Generates the launcher icon (adaptive + legacy vector drawables) and store/icon-512.png from one geometry.
 
-The icon is a tiny Arrow Escape board: a 3x3 grid fully packed with interlocking arrows, highlighting the one that can
-leave right now. It is a real chain: yellow frees the top arrow, which frees the bent one, which frees the centre one. Usage: python3 tools/gen_icon.py [preview.png]  (needs Pillow)
+The icon is a tiny Arrow Escape board: a 4x4 grid fully packed with six interlocking arrows, highlighting the one that
+can leave right now. Usage: python3 tools/gen_icon.py [preview.png]  (needs Pillow)
 """
 import os
 import sys
@@ -15,19 +15,22 @@ BG, PANEL, INK, FREE = "#FFFFFF", None, "#1B2133", "#2F5BEA"  # PANEL None: no b
 PANEL_BOX, PANEL_R = (20, 20, 88, 88), 12  # the "board" behind the arrows
 DIRS = {"U": (0, -1), "D": (0, 1), "L": (-1, 0), "R": (1, 0)}
 
-# Arrows as (direction, cells head-first) on a 3x3 grid (row, col); same rules as the game.
+# Arrows as (direction, cells head-first) on a 4x4 grid (row, col); same rules as the game. Every cell is used, and it
+# is a real chain: blue leaves, then the one above it, the top row, the left column, then the two bent arrows.
 ARROWS = [
-    ("R", [(0, 1), (0, 0)]),          # blocked by the yellow arrow
-    ("D", [(2, 2), (1, 2), (0, 2)]),  # free: nothing below it -> highlighted
-    ("U", [(1, 0), (2, 0), (2, 1)]),  # bent; blocked by the top arrow
-    ("L", [(1, 1)]),                  # single cell; blocked by the bent arrow
+    ("R", [(0, 2), (0, 1), (0, 0)]),  # blocked by the short arrow on its right
+    ("D", [(3, 3), (2, 3)]),          # free: nothing below it -> highlighted
+    ("D", [(1, 3), (0, 3)]),          # blocked by blue
+    ("U", [(1, 0), (2, 0), (3, 0)]),  # blocked by the top row
+    ("L", [(1, 1), (1, 2), (2, 2)]),  # bent; blocked by the left column
+    ("U", [(2, 1), (3, 1), (3, 2)]),  # bent; blocked by the arrow above
 ]
 FREE_INDEX = 1
 
 # 108-unit adaptive-icon viewport; everything stays inside the 66-unit safe zone (21..87).
 # Everything must fit the circular mask some launchers apply: radius 33 around (54, 54).
-ORIGIN, STEP = 37, 17          # cell centres at 37, 54, 71; furthest arrow tip is ~31 from the centre
-STROKE, TIP, BACK, HALF, STUB = 6.0, 8.0, 1.0, 6.5, 6.5  # bold enough to read at 48dp
+ORIGIN, STEP = 34.5, 13        # cell centres at 34.5 .. 73.5
+STROKE, TIP, BACK, HALF, STUB = 4.6, 5.2, 1.0, 4.8, 5.0  # short heads leave a gap before the next tail
 
 
 def centre(rc):
