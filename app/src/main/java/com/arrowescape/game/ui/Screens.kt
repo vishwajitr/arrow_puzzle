@@ -137,6 +137,10 @@ fun SettingsScreen(
     onReset: () -> Unit,
     onBack: () -> Unit,
     onAdPrivacy: (() -> Unit)? = null,
+    removeAdsPrice: String? = null,
+    purchasePending: Boolean = false,
+    onRemoveAds: () -> Unit = {},
+    onRestore: () -> Unit = {},
 ) {
     var confirm by remember { mutableStateOf(false) }
     Column(Modifier.fillMaxSize().padding(16.dp)) {
@@ -162,6 +166,15 @@ fun SettingsScreen(
             }
         }
         HorizontalDivider(Modifier.padding(vertical = 16.dp))
+        when {
+            settings.adsRemoved -> Text("Ads removed. Thank you!", Modifier.padding(horizontal = 16.dp, vertical = 8.dp), style = MaterialTheme.typography.titleMedium)
+            purchasePending -> Text("Remove ads: payment pending", Modifier.padding(horizontal = 16.dp, vertical = 8.dp), style = MaterialTheme.typography.titleMedium)
+            removeAdsPrice != null -> Column(Modifier.padding(horizontal = 16.dp, vertical = 4.dp)) {
+                Button(onRemoveAds) { Text("Remove ads  ·  $removeAdsPrice") }
+                Text("No banners or ads between levels. Optional videos for hints stay.", Modifier.padding(top = 6.dp), style = MaterialTheme.typography.bodySmall)
+            }
+        }
+        if (!settings.adsRemoved) TextButton(onRestore, Modifier.padding(horizontal = 4.dp)) { Text("Restore purchases") }
         if (onAdPrivacy != null) TextButton(onAdPrivacy, Modifier.padding(horizontal = 4.dp)) { Text("Ad privacy settings") }
         TextButton({ confirm = true }, Modifier.padding(horizontal = 4.dp)) { Text("Reset progress", color = MaterialTheme.colorScheme.error) }
     }

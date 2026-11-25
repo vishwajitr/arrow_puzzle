@@ -1,6 +1,6 @@
 # Google Play listing – Arrow Escape
 
-Package ID: `com.vishwajit.arrowescape` (permanent once uploaded; the code package stays `com.arrowescape.game`) · Version 1.0.0 (code 1) · Upload file: `app/build/outputs/bundle/release/app-release.aab`
+Package ID: `com.vishwajit.arrowescape` (permanent once uploaded; the code package stays `com.arrowescape.game`) · Version 1.1.0 (code 3) · Upload file: `app/build/outputs/bundle/release/app-release.aab`
 
 ## 1. Create your upload key (once; only you should do this)
 
@@ -61,15 +61,24 @@ To refresh the graphics after a design change: put new 1080x2400 emulator screen
 ## 3. App content (Play Console)
 
 - **App or game:** Game. **Category:** Puzzle. **Tags:** puzzle, logic, brain games, relaxing.
-- **Free / paid:** Free. **In-app purchases:** No.
+- **Free / paid:** Free. **In-app purchases:** Yes (one-time "Remove ads").
 - **Contains ads:** Yes.
 - **Contact email:** your own (it is shown publicly on the store page).
 - **Privacy policy URL:** `https://github.com/vishwajitr/arrow_puzzle/blob/main/PRIVACY.md` (the `PRIVACY.md` in this public repo, same as the Ludo app). Edits go live as soon as they are pushed to `main`.
 - **Target audience:** 13 and over only. Do not include under-13 age groups: that would put the app under Google's Families policy, which the current ad setup does not follow.
 - **Content rating (IARC questionnaire):** answer No to violence, blood, sexual content, profanity, drugs, gambling, user-generated content, sharing location and digital purchases. Expected: Everyone / PEGI 3.
-- **Data safety:** data is collected and shared by the AdMob SDK only. Follow AdMob's guide ("Prepare for Google Play's Data safety section") and declare at least **Device or other IDs** (advertising ID), **Approximate location**, **App interactions** and **Diagnostics**, collected and shared for **Advertising** and **Fraud prevention**, encrypted in transit. Game progress and settings stay on the device and are not collected.
+- **Data safety:** data is collected and shared by the AdMob SDK only. Follow AdMob's guide ("Prepare for Google Play's Data safety section") and declare at least **Device or other IDs** (advertising ID), **Approximate location**, **App interactions** and **Diagnostics**, collected and shared for **Advertising** and **Fraud prevention**, encrypted in transit. Game progress and settings stay on the device and are not collected. **Firebase Analytics (from 1.1.0)** adds, for the purpose **Analytics**: **App activity → App interactions** and **Other actions** (level and hint events), **App info and performance → Diagnostics**, and **Device or other IDs** (Firebase app instance ID). Collected, not shared beyond Google as a service provider; not optional (consent form applies in the EEA/UK); encrypted in transit. **Financial info → Purchase history**: collected by Google Play billing for the optional "Remove ads" purchase, for **App functionality**.
 - **Advertising ID:** Yes, used for advertising.
 - **Government / news / health / financial features:** No.
+
+## In-app product: Remove ads
+
+Play only lets you create products after a build with Play Billing is uploaded (1.1.0 or later, to any track).
+
+1. Play Console → **Monetize with Play → Products → One-time products** → **Create**.
+2. Product ID: `remove_ads` (must match exactly; permanent). Name: `Remove ads`. Description: `No banners or ads between levels. Optional hint videos stay.`
+3. Purchase option: **Buy**, non-consumable. Set a price (e.g. ₹129 / US$1.99), then **Activate**.
+4. Testing: Play Console → **Settings → License testing** → add your Gmail. Install the app from the closed-test link on a phone signed in with that account: test purchases are free and can be refunded from the order page.
 
 ## 4. AdMob (before or right after the first upload)
 
@@ -77,7 +86,7 @@ The real ad unit ids live in `~/.gradle/gradle.properties` on your machine (`ARR
 
 1. In AdMob, open **Privacy & messaging** and publish a **European regulations (GDPR)** message for Arrow Escape, so EEA/UK players see the consent form.
 2. Once the app is live, open the app in AdMob and **link it to its Play Store listing** (it was registered as "not on a store yet"): search for package `com.vishwajit.arrowescape`.
-3. Add an `app-ads.txt` file at the root of the developer website shown on your Play listing, with the line AdMob gives you.
+3. `app-ads.txt` is served from the GitHub Pages site `https://vishwajitr.github.io/app-ads.txt` (repo `vishwajitr/vishwajitr.github.io`, one file for all your apps). Set **Website** in Play Console → Store settings → Store listing contact details to `https://vishwajitr.github.io`, exactly, then check the status in AdMob after 24 h.
 4. Never tap your own live ads. Use the debug build, or add your phone as a test device in AdMob.
 
 ## 5. Upload and release

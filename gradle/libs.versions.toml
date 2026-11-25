@@ -13,6 +13,9 @@ truth = "1.4.5"
 orgJson = "20250517"
 ads = "25.5.0"
 ump = "4.0.0"
+billing = "9.1.0"
+firebaseBom = "35.2.0"
+googleServices = "4.6.0"
 
 [libraries]
 compose-bom = { module = "androidx.compose:compose-bom", version.ref = "composeBom" }
@@ -32,7 +35,11 @@ truth = { module = "com.google.truth:truth", version.ref = "truth" }
 org-json = { module = "org.json:json", version.ref = "orgJson" }
 play-services-ads = { module = "com.google.android.gms:play-services-ads", version.ref = "ads" }
 ump = { module = "com.google.android.ump:user-messaging-platform", version.ref = "ump" }
+billing = { module = "com.android.billingclient:billing", version.ref = "billing" }
+firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebaseBom" }
+firebase-analytics = { module = "com.google.firebase:firebase-analytics" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+google-services = { id = "com.google.gms.google-services", version.ref = "googleServices" }

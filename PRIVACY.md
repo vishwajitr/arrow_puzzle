@@ -1,6 +1,6 @@
 # Arrow Escape – Privacy Policy
 
-Last updated: 24 Nov 2026
+Last updated: 25 Nov 2026
 
 The Arrow Escape game itself does not collect personal information. It shows ads from Google AdMob, and Google may collect some device information to deliver them, as described below.
 
@@ -33,11 +33,27 @@ In the EEA, the UK and other regions where it is required, the App asks for your
 
 Google's use of this data is described in the [Google Privacy Policy](https://policies.google.com/privacy) and [How Google uses information from sites or apps that use its services](https://policies.google.com/technologies/partner-sites).
 
+## Analytics
+
+The App uses Google Analytics for Firebase to understand how the game is played, so levels and ads can be tuned. It records:
+
+* Game events, such as levels started and finished, stars, hints and continues used
+* App usage, such as app opens, session length and which screens are shown
+* Ads shown and the optional purchase, as reported by Google's own SDKs
+* Device information, such as device model, OS version, language, app version and approximate location from your IP address
+* A random app instance ID, which is not your name, email or account
+
+This data is processed by Google on the Developer's behalf and is not used to identify you. Where consent is required, your choice in the consent form also applies to analytics. See [how Google uses this data](https://policies.google.com/technologies/partner-sites).
+
+## Purchases
+
+The App offers an optional one-time purchase to remove ads. Payment is handled entirely by Google Play; the Developer never receives your card or payment details. The App only asks Google Play whether this purchase is owned, and remembers the answer on your device. Google's handling of purchase data is covered by the Google Privacy Policy and the Google Play Terms of Service.
+
 ## Permissions and third parties
 
-The App uses internet access, network state and the advertising ID permission only to load ads. It requests no other sensitive permissions. Vibration is used only for haptic feedback during play.
+The App uses internet access, network state and the advertising ID permission to load ads, and Google Play's billing permission for the optional purchase. It requests no other sensitive permissions. Vibration is used only for haptic feedback during play.
 
-Apart from Google AdMob, the App shares no data with any third party, and it does not sell data.
+Apart from Google (AdMob, Firebase Analytics and Google Play billing), the App shares no data with any third party, and it does not sell data.
 
 ## Children
 

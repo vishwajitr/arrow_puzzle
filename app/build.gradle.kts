@@ -3,6 +3,7 @@ import java.util.Properties
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.google.services) // reads app/google-services.json (Firebase project arrows-puzzle-84166; kept out of git)
 }
 
 // Release signing: keystore.properties (see keystore.properties.example) in ~/.arrow-escape-signing/ (preferred: keeps
@@ -74,6 +75,9 @@ dependencies {
     implementation(libs.core.ktx)
     implementation(libs.play.services.ads)
     implementation(libs.ump)
+    implementation(libs.billing)
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.analytics)
     debugImplementation(libs.compose.ui.tooling)
     testImplementation(libs.junit4)
     testImplementation(libs.truth)

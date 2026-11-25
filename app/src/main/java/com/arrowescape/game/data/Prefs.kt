@@ -21,6 +21,8 @@ data class Settings(
     val haptics: Boolean = true,
     val theme: ThemeMode = ThemeMode.SYSTEM,
     val style: Style = Style.CLASSIC,
+    /** Cached "Remove ads" entitlement; Play's purchase list (see Billing) is the source of truth. */
+    val adsRemoved: Boolean = false,
 )
 
 data class Progress(
@@ -42,6 +44,7 @@ class Prefs(context: Context) {
     private val theme = stringPreferencesKey("theme")
     private val style = stringPreferencesKey("style")
     private val tokens = intPreferencesKey("hint_tokens")
+    private val adsRemoved = booleanPreferencesKey("ads_removed")
     private fun starsKey(level: Int) = intPreferencesKey("stars_$level")
 
     val settings: Flow<Settings> = store.data.map {
@@ -49,6 +52,7 @@ class Prefs(context: Context) {
             it[sound] ?: true, it[haptics] ?: true,
             it[theme]?.let(ThemeMode::valueOf) ?: ThemeMode.SYSTEM,
             it[style]?.let(Style::valueOf) ?: Style.CLASSIC,
+            it[adsRemoved] ?: false,
         )
     }
 
@@ -65,6 +69,7 @@ class Prefs(context: Context) {
     suspend fun setHaptics(on: Boolean) = store.edit { it[haptics] = on }
     suspend fun setTheme(mode: ThemeMode) = store.edit { it[theme] = mode.name }
     suspend fun setStyle(s: Style) = store.edit { it[style] = s.name }
+    suspend fun setAdsRemoved(on: Boolean) = store.edit { it[adsRemoved] = on }
 
     /** Keeps the best result. A first 3-star clear earns a hint token. */
     suspend fun recordWin(level: Int, stars: Int) = store.edit {

@@ -1,6 +1,7 @@
 package com.arrowescape.game.data
 
 import android.app.Activity
+import android.os.Bundle
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -14,6 +15,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.arrowescape.game.BuildConfig
+import com.google.ads.mediation.admob.AdMobAdapter
 import com.google.android.gms.ads.AdError
 import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.AdSize
@@ -49,6 +51,9 @@ class Ads(private val activity: Activity) {
     private val _privacyOptions = MutableStateFlow(false)
     /** True when the user's region requires an "Ad privacy settings" entry point. */
     val privacyOptionsRequired: StateFlow<Boolean> = _privacyOptions
+
+    /** Set from the "Remove ads" entitlement: hides the banner, interstitials and app-open ads. Rewarded stays (opt-in). */
+    val removed = MutableStateFlow(false)
 
     private val _rewardedReady = MutableStateFlow(false)
     val rewardedReady: StateFlow<Boolean> = _rewardedReady
@@ -99,7 +104,7 @@ class Ads(private val activity: Activity) {
     fun maybeShowInterstitial(clearedLevel: Int, then: () -> Unit) {
         val ad = interstitial
         val now = System.currentTimeMillis()
-        if (ad == null || clearedLevel % EVERY_N_LEVELS != 0 || now - lastFullScreen < COOLDOWN_MS) return then()
+        if (removed.value || ad == null || clearedLevel < FIRST_LEVEL || clearedLevel % EVERY_N_LEVELS != 0 || now - lastFullScreen < COOLDOWN_MS) return then()
         interstitial = null
         lastFullScreen = now
         fullScreen = true
@@ -140,7 +145,7 @@ class Ads(private val activity: Activity) {
 
     /** Call from Activity.onStart on a warm return. Skipped right after another full-screen ad or within the cooldown. */
     fun onAppForegrounded() {
-        if (fullScreen) return
+        if (fullScreen || removed.value) return
         val ad = appOpen ?: return
         val now = System.currentTimeMillis()
         if (now - appOpenLoadedAt > APP_OPEN_TTL_MS) { appOpen = null; loadAppOpen(); return } // Google: stale after 4h
@@ -153,23 +158,33 @@ class Ads(private val activity: Activity) {
     }
 
     private companion object {
-        const val EVERY_N_LEVELS = 3
-        const val COOLDOWN_MS = 90_000L // ponytail: one fixed cap shared by interstitial + app-open; tune from AdMob stats
+        const val FIRST_LEVEL = 20 // ad-free start (tutorial + 10 levels): first impressions drive D1 retention
+        const val EVERY_N_LEVELS = 2
+        const val COOLDOWN_MS = 60_000L // ponytail: one fixed cap shared by interstitial + app-open; tune from AdMob stats
         const val APP_OPEN_TTL_MS = 4 * 3_600_000L
     }
 }
 
-/** Anchored adaptive banner; draws nothing until ads are allowed. */
+/**
+ * Anchored adaptive banner. [collapsible] opens it larger first, then the player collapses it to the strip; AdMob allows
+ * that only on static screens (Home), never on the puzzle screen, where accidental taps count as invalid clicks.
+ * Draws nothing until ads are allowed, or once ads are removed.
+ */
 @Composable
-fun AdBanner(ads: Ads, modifier: Modifier = Modifier) {
+fun AdBanner(ads: Ads, modifier: Modifier = Modifier, collapsible: Boolean = false) {
     val ready by ads.ready.collectAsStateWithLifecycle()
-    if (!ready) return
+    val removed by ads.removed.collectAsStateWithLifecycle()
+    if (!ready || removed) return
     val context = LocalContext.current
     BoxWithConstraints(modifier.fillMaxWidth()) {
         @Suppress("DEPRECATION") // still the standard-height anchored banner; the "large" replacement is much taller
         val size = remember(maxWidth) { AdSize.getCurrentOrientationAnchoredAdaptiveBannerAdSize(context, maxWidth.value.toInt()) }
         val view = remember(size) {
-            AdView(context).apply { setAdSize(size); adUnitId = BuildConfig.ADMOB_BANNER_ID; loadAd(AdRequest.Builder().build()) }
+            AdView(context).apply { setAdSize(size); adUnitId = BuildConfig.ADMOB_BANNER_ID
+                val request = AdRequest.Builder()
+                if (collapsible) request.addNetworkExtrasBundle(AdMobAdapter::class.java, Bundle().apply { putString("collapsible", "bottom") })
+                loadAd(request.build())
+            }
         }
         DisposableEffect(view) { onDispose { view.destroy() } }
         AndroidView({ view }, Modifier.fillMaxWidth().height(size.height.dp))

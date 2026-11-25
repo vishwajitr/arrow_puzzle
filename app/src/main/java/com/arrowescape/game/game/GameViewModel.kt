@@ -1,6 +1,8 @@
 package com.arrowescape.game.game
 
 import android.app.Application
+import androidx.core.os.bundleOf
+import com.google.firebase.analytics.FirebaseAnalytics
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.arrowescape.game.App
@@ -37,6 +39,12 @@ sealed interface BoardEvent {
 class GameViewModel(app: Application) : AndroidViewModel(app) {
     private val prefs = (app as App).prefs
     private val sfx = (app as App).sfx
+    private val analytics = (app as App).analytics
+
+    private fun log(event: String, vararg params: Pair<String, Any>) {
+        val n = _ui.value.levelNumber
+        analytics.logEvent(event, bundleOf(FirebaseAnalytics.Param.LEVEL_NAME to "$n", FirebaseAnalytics.Param.LEVEL to n.toLong(), *params))
+    }
     private var game: Game? = null
 
     private val _ui = MutableStateFlow(GameUi(levelNumber = 1))
@@ -59,6 +67,7 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
             }
             game = Game(level)
             publish()
+            log(FirebaseAnalytics.Event.LEVEL_START)
         }
     }
 
@@ -67,6 +76,7 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         game = Game(g.level)
         _ui.update { it.copy(paused = false) }
         publish()
+        log(FirebaseAnalytics.Event.LEVEL_START)
     }
 
     fun setPaused(p: Boolean) = _ui.update { it.copy(paused = p) }
@@ -80,12 +90,14 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
                 _events.tryEmit(BoardEvent.Exit(r.arrow))
                 if (g.won) {
                     sfx.play(Sound.WIN)
+                    log(FirebaseAnalytics.Event.LEVEL_END, FirebaseAnalytics.Param.SUCCESS to "true", "stars" to g.stars.toLong(), "mistakes" to g.mistakes.toLong())
                     viewModelScope.launch { prefs.recordWin(_ui.value.levelNumber, g.stars) }
                 }
             }
             is TapResult.Blocked -> {
                 sfx.play(Sound.BLOCK)
                 _events.tryEmit(BoardEvent.Bounce(r.arrow, r.distance))
+                if (g.failed) log(FirebaseAnalytics.Event.LEVEL_END, FirebaseAnalytics.Param.SUCCESS to "false")
             }
             TapResult.Ignored -> return
         }
@@ -97,19 +109,29 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         val g = game ?: return
         if (_ui.value.hint != null || g.won) return
         viewModelScope.launch {
-            if (prefs.spendToken()) _ui.update { it.copy(hint = g.hint()) }
+            if (prefs.spendToken()) { _ui.update { it.copy(hint = g.hint()) }; log("hint_used", "source" to "token") }
         }
     }
 
-    fun grantToken() { viewModelScope.launch { prefs.addToken() } }
+    /** Reward for a rewarded ad watched for a hint: grants the token and spends it on the hint right away. */
+    fun rewardHint() {
+        val g = game ?: return
+        viewModelScope.launch {
+            prefs.addToken()
+            if (_ui.value.hint == null && !g.won && prefs.spendToken()) { _ui.update { it.copy(hint = g.hint()) }; log("hint_used", "source" to "ad") }
+        }
+    }
 
     /** Spends a token to continue after running out of hearts. */
     fun revive() {
         val g = game ?: return
         viewModelScope.launch {
-            if (prefs.spendToken()) { g.revive(); publish() }
+            if (prefs.spendToken()) { g.revive(); publish(); log("revive", "source" to "token") }
         }
     }
+
+    /** Reward for watching a rewarded ad when out of hearts: one heart back, no token spent. */
+    fun reviveFree() { game?.let { it.revive(); publish(); log("revive", "source" to "ad") } }
 
     private fun publish(keepHint: Int? = null) {
         val g = game ?: return

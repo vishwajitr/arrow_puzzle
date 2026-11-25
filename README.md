@@ -61,9 +61,13 @@ The real IDs (`ARROW_ADMOB_*`) live in `~/.gradle/gradle.properties`, outside th
 
 | Unit | Where |
 |---|---|
-| Banner | Under the board on the puzzle screen |
-| Interstitial | On **Next** after every 3rd cleared level, at most once per 90 s |
-| Rewarded | "Watch an ad for +1 hint" when out of hints, also offered in the out-of-hearts dialog |
+| Banner | Under the board on the puzzle screen (standard). On Home it is **collapsible** (opens larger, the player collapses it); AdMob forbids collapsible banners during gameplay |
+| Interstitial | On **Next** after every 2nd cleared level from level 20 (ad-free start), at most once per 60 s |
+| Rewarded | "Watch an ad for a hint" when out of hints (shows the hint at once; after 20 s without a correct move it pulses as "Stuck?"); "Watch ad: +1 heart" in the out-of-hearts dialog |
 | App open | When returning to the app (warm start), never on cold launch or right after another ad |
+
+**Remove ads** (`data/Billing.kt`): a one-time Play purchase, product id `remove_ads`. It turns off the banner, interstitials and app-open ads; rewarded videos stay because they are opt-in. Play's purchase list is re-read on every start and resume (that is the restore; Settings also has **Restore purchases**) and cached in DataStore for offline play. Refunds turn ads back on.
+
+**Analytics** (Firebase project `arrows-puzzle-84166`): `app/google-services.json` is needed to build and is kept out of git (download it from Firebase → Project settings → Android app `com.vishwajit.arrowescape`). Firebase logs retention (first_open, session_start, engagement), `ad_impression` once AdMob is linked to Firebase, and `in_app_purchase` itself. The app adds `level_start`, `level_end` (success, stars, mistakes), `hint_used` and `revive` (source token or ad), in `GameViewModel`. To watch events live: `adb shell setprop debug.firebase.analytics.app com.vishwajit.arrowescape`, then Firebase → DebugView.
 
 Ads only load after Google's consent form (UMP) allows them. Settings shows **Ad privacy settings** where the region requires it. Before publishing, add the app's store listing to the AdMob app entry and set up the EU consent message in AdMob → Privacy & messaging.

@@ -11,3 +11,4 @@ store/raw/
 old_scaffold/
 old_scaffold_backup.tar.gz
 .kotlin/
+app/google-services.json

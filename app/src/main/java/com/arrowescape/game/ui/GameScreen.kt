@@ -1,6 +1,12 @@
 package com.arrowescape.game.ui
 
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.Canvas
@@ -58,7 +64,7 @@ import kotlin.random.Random
 fun GameScreen(vm: GameViewModel, ads: Ads, settings: Settings, onHome: () -> Unit) {
     val ui by vm.ui.collectAsStateWithLifecycle()
     val rewardedReady by ads.rewardedReady.collectAsStateWithLifecycle()
-    val watchForHint = { ads.showRewarded(vm::grantToken) }
+    val watchForHint = { ads.showRewarded(vm::rewardHint) }
     val haptics = LocalHapticFeedback.current
     val look = LocalLook.current
 
@@ -70,6 +76,15 @@ fun GameScreen(vm: GameViewModel, ads: Ads, settings: Settings, onHome: () -> Un
     LaunchedEffect(ui.status, settings.haptics) {
         if (ui.status == Status.WON && settings.haptics) haptics.performHapticFeedback(HapticFeedbackType.Confirm)
     }
+
+    // Stall detection: no correct move for STALL_MS (wrong taps don't count) -> pulse the hint, the best moment to offer it.
+    var stuck by remember { mutableStateOf(false) }
+    LaunchedEffect(ui.level, ui.alive.count { it }, ui.hint, ui.status, ui.paused) {
+        stuck = false
+        if (ui.status == Status.PLAYING && ui.hint == null && !ui.paused) { delay(STALL_MS); stuck = true }
+    }
+    val pulse = if (stuck) rememberInfiniteTransition(label = "stuck")
+        .animateFloat(1f, 1.08f, infiniteRepeatable(tween(600), RepeatMode.Reverse), label = "pulse").value else 1f
 
     Box(Modifier.fillMaxSize()) {
         Column(Modifier.fillMaxSize().padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
@@ -92,12 +107,14 @@ fun GameScreen(vm: GameViewModel, ads: Ads, settings: Settings, onHome: () -> Un
             Box(Modifier.weight(1f).fillMaxWidth().padding(vertical = 20.dp), contentAlignment = Alignment.Center) {
                 ui.level?.let { BoardView(it, ui.alive, ui.hint, vm.events, vm::tap, Modifier.fillMaxSize()) }
             }
-            SecondaryButton(vm::hint, Modifier.height(if (look.playful) 52.dp else 48.dp), enabled = ui.tokens > 0 && ui.hint == null && ui.status == Status.PLAYING) {
+            SecondaryButton(vm::hint, Modifier.height(if (look.playful) 52.dp else 48.dp).scale(if (ui.tokens > 0) pulse else 1f), enabled = ui.tokens > 0 && ui.hint == null && ui.status == Status.PLAYING) {
                 if (look.playful) Text("Hint  ·  ${ui.tokens}", style = MaterialTheme.typography.titleMedium)
                 else Text("Hint   ${ui.tokens}", style = MaterialTheme.typography.labelLarge, letterSpacing = 1.sp)
             }
-            if (ui.tokens == 0 && rewardedReady && ui.status == Status.PLAYING) TextButton(watchForHint) { Text("Watch an ad for +1 hint", letterSpacing = 0.5.sp) }
-            Spacer(Modifier.height(8.dp))
+            if (ui.tokens == 0 && rewardedReady && ui.status == Status.PLAYING && ui.hint == null) TextButton(watchForHint, Modifier.scale(pulse)) {
+                Text(if (stuck) "Stuck? Watch an ad for a hint" else "Watch an ad for a hint", letterSpacing = 0.5.sp)
+            }
+            Spacer(Modifier.height(16.dp)) // AdMob: keep banners clear of tappable controls
             AdBanner(ads)
         }
 
@@ -119,11 +136,11 @@ fun GameScreen(vm: GameViewModel, ads: Ads, settings: Settings, onHome: () -> Un
         ui.status == Status.FAILED -> AlertDialog(
             onDismissRequest = {},
             title = { Text("Out of hearts") },
-            text = { Text("Retry the level, or spend a hint token to keep going with one heart.") },
+            text = { Text(if (ui.tokens > 0) "Retry the level, or spend a hint token to keep going with one heart." else "Retry the level, or watch a short video to keep going with one heart.") },
             confirmButton = { Button(onClick = vm::restart) { Text("Retry") } },
             dismissButton = {
                 if (ui.tokens > 0) TextButton(onClick = vm::revive) { Text("Continue (1 hint)") }
-                else if (rewardedReady) TextButton(onClick = watchForHint) { Text("Watch ad for a hint") }
+                else if (rewardedReady) TextButton(onClick = { ads.showRewarded(vm::reviveFree) }) { Text("Watch ad: +1 heart") }
             },
         )
         ui.paused -> AlertDialog(
@@ -139,6 +156,8 @@ fun GameScreen(vm: GameViewModel, ads: Ads, settings: Settings, onHome: () -> Un
         )
     }
 }
+
+private const val STALL_MS = 20_000L
 
 @Composable
 private fun RoundIcon(symbol: String, label: String, onClick: () -> Unit) {
