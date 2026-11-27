@@ -94,7 +94,7 @@ fun LevelSelectScreen(progress: Progress, onPick: (Int) -> Unit, onBack: () -> U
         HorizontalPager(pager, Modifier.weight(1f)) { page ->
             val range = (page * PER_PAGE + 1)..minOf((page + 1) * PER_PAGE, Levels.TOTAL)
             LazyVerticalGrid(GridCells.Fixed(5), Modifier.fillMaxSize().padding(top = 12.dp), verticalArrangement = Arrangement.spacedBy(10.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                items(range.toList()) { n -> LevelTile(n, progress.stars[n] ?: 0, locked = n > progress.unlocked, onPick) }
+                items(range.toList()) { n -> LevelTile(n, progress.stars[n] ?: 0, locked = n > progress.unlocked, current = n == progress.unlocked, onPick) }
             }
         }
         Text("Swipe for more", Modifier.align(Alignment.CenterHorizontally), color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.45f))
@@ -102,9 +102,8 @@ fun LevelSelectScreen(progress: Progress, onPick: (Int) -> Unit, onBack: () -> U
 }
 
 @Composable
-private fun LevelTile(n: Int, stars: Int, locked: Boolean, onPick: (Int) -> Unit) {
+private fun LevelTile(n: Int, stars: Int, locked: Boolean, current: Boolean, onPick: (Int) -> Unit) {
     val playful = LocalLook.current.playful
-    val current = !locked && stars == 0
     val bg = when {
         locked -> if (playful) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f) else Color.Transparent
         current -> MaterialTheme.colorScheme.primary
@@ -122,7 +121,7 @@ private fun LevelTile(n: Int, stars: Int, locked: Boolean, onPick: (Int) -> Unit
                 "$n", fontWeight = if (playful) FontWeight.Bold else FontWeight.Medium, fontSize = if (playful) 18.sp else 16.sp,
                 color = when { current -> MaterialTheme.colorScheme.onPrimary; locked -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.28f); else -> MaterialTheme.colorScheme.onSurface },
             )
-            if (!locked && stars > 0) Text("★".repeat(stars) + "☆".repeat(3 - stars), fontSize = if (playful) 10.sp else 9.sp, color = LocalLook.current.gold, letterSpacing = if (playful) 0.sp else 1.sp)
+            if (!locked && !current) Text("★".repeat(stars) + "☆".repeat(3 - stars), fontSize = if (playful) 10.sp else 9.sp, color = LocalLook.current.gold, letterSpacing = if (playful) 0.sp else 1.sp)
         }
     }
 }

@@ -28,6 +28,8 @@ data class GameUi(
     val hint: Int? = null,
     val tokens: Int = 0,
     val paused: Boolean = false,
+    val iq: Int = 80,
+    val cleared: Int = 0,
 )
 
 /** One-shot animation triggers for the board. */
@@ -56,13 +58,13 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
     val events = _events.asSharedFlow()
 
     init {
-        viewModelScope.launch { prefs.progress.collect { p -> _ui.update { it.copy(tokens = p.hintTokens) } } }
+        viewModelScope.launch { prefs.progress.collect { p -> _ui.update { it.copy(tokens = p.hintTokens, iq = p.iq, cleared = p.stars.size) } } }
         viewModelScope.launch { prefs.settings.collect { sfx.enabled = it.sound } }
     }
 
     fun load(n: Int) {
         if (_ui.value.levelNumber == n && game != null) return
-        _ui.update { GameUi(levelNumber = n, tokens = it.tokens) }
+        _ui.update { GameUi(levelNumber = n, tokens = it.tokens, iq = it.iq, cleared = it.cleared) }
         viewModelScope.launch {
             val assets = getApplication<Application>().assets
             val level = withContext(Dispatchers.Default) {

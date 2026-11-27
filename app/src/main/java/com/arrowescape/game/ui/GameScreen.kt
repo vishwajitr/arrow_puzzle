@@ -50,6 +50,17 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.activity.compose.LocalActivity
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.material3.Surface
+import androidx.compose.ui.platform.LocalContext
+import androidx.core.os.bundleOf
+import com.arrowescape.game.App
+import com.arrowescape.game.data.ShareTarget
+import com.arrowescape.game.data.askForReviewOnce
+import com.arrowescape.game.data.iqTitle
+import com.arrowescape.game.data.shareIq
+import com.google.firebase.analytics.FirebaseAnalytics
 import com.arrowescape.game.data.AdBanner
 import com.arrowescape.game.data.Ads
 import com.arrowescape.game.data.Settings
@@ -76,6 +87,15 @@ fun GameScreen(vm: GameViewModel, ads: Ads, settings: Settings, onHome: () -> Un
     }
     LaunchedEffect(ui.status, settings.haptics) {
         if (ui.status == Status.WON && settings.haptics) haptics.performHapticFeedback(HapticFeedbackType.Confirm)
+    }
+    // Ask for a Play review once ever, after a win (a happy moment) once the player is invested, never on an IQ milestone.
+    val activity = LocalActivity.current
+    val app = LocalContext.current.applicationContext as App
+    LaunchedEffect(ui.status) {
+        if (ui.status == Status.WON && ui.levelNumber >= REVIEW_LEVEL && !isMilestone(ui.levelNumber) && activity != null) {
+            delay(1500) // let the stars and confetti play first
+            askForReviewOnce(activity, app.prefs)
+        }
     }
 
     // Stall detection: no correct move for STALL_MS (wrong taps don't count) -> pulse the hint, the best moment to offer it.
@@ -151,6 +171,11 @@ fun GameScreen(vm: GameViewModel, ads: Ads, settings: Settings, onHome: () -> Un
         )
         ui.status == Status.WON -> WinDialog(
             stars = ui.stars,
+            iq = ui.iq.takeIf { isMilestone(ui.levelNumber) },
+            onShare = { target ->
+                activity?.let { shareIq(it, ui.iq, ui.cleared, target) }
+                app.analytics.logEvent(FirebaseAnalytics.Event.SHARE, bundleOf(FirebaseAnalytics.Param.METHOD to target.name.lowercase(), FirebaseAnalytics.Param.CONTENT_TYPE to "puzzle_iq"))
+            },
             hasNext = ui.levelNumber < Levels.TOTAL,
             onNext = {
                 // Capture the level now: reading ui.levelNumber inside the callback after the ad closes picks up any
@@ -189,6 +214,10 @@ fun GameScreen(vm: GameViewModel, ads: Ads, settings: Settings, onHome: () -> Un
 
 private const val STALL_MS = 20_000L
 private const val SKIP_STALL_MS = 60_000L
+private const val REVIEW_LEVEL = 15
+
+/** Every 10th level (end of the tutorial, then 20, 30, ...) shows the Puzzle IQ banner with share buttons. */
+private fun isMilestone(level: Int) = level % 10 == 0
 
 @Composable
 private fun RoundIcon(symbol: String, label: String, onClick: () -> Unit) {
@@ -199,10 +228,10 @@ private fun RoundIcon(symbol: String, label: String, onClick: () -> Unit) {
 }
 
 @Composable
-private fun WinDialog(stars: Int, hasNext: Boolean, onNext: () -> Unit, onReplay: () -> Unit) = AlertDialog(
+private fun WinDialog(stars: Int, iq: Int?, onShare: (ShareTarget) -> Unit, hasNext: Boolean, onNext: () -> Unit, onReplay: () -> Unit) = AlertDialog(
     onDismissRequest = {},
     title = { Text(if (LocalLook.current.playful) "Cleared!" else "Level cleared", Modifier.fillMaxWidth(), textAlign = TextAlign.Center, fontWeight = FontWeight.Medium) },
-    text = {
+    text = { Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
             repeat(3) { i ->
                 val s = remember { Animatable(0f) }
@@ -216,7 +245,8 @@ private fun WinDialog(stars: Int, hasNext: Boolean, onNext: () -> Unit, onReplay
                 )
             }
         }
-    },
+        if (iq != null) IqBanner(iq, onShare)
+    } },
     confirmButton = { if (hasNext) Button(onClick = onNext) { Text("Next") } },
     dismissButton = { TextButton(onClick = onReplay) { Text("Replay") } },
 )
@@ -250,3 +280,23 @@ private fun Confetti(look: Look) {
 
 private operator fun FloatArray.component6() = this[5]
 private operator fun FloatArray.component7() = this[6]
+
+/** Milestone reward: the player's Puzzle IQ, with one-tap sharing. */
+@Composable
+private fun IqBanner(iq: Int, onShare: (ShareTarget) -> Unit) {
+    val shown = remember { Animatable(0f) }
+    LaunchedEffect(Unit) { delay(900); shown.animateTo(1f, spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow)) }
+    Column(Modifier.padding(top = 16.dp).fillMaxWidth().scale(shown.value), horizontalAlignment = Alignment.CenterHorizontally) {
+        Surface(color = MaterialTheme.colorScheme.primary, shape = MaterialTheme.shapes.large, modifier = Modifier.fillMaxWidth()) {
+            Column(Modifier.padding(vertical = 14.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                Text("YOUR PUZZLE IQ", style = MaterialTheme.typography.labelMedium, letterSpacing = 2.sp)
+                Text("$iq", fontSize = 44.sp, fontWeight = FontWeight.Bold)
+                Text("★ ${iqTitle(iq)} ★", color = LocalLook.current.gold, fontWeight = FontWeight.Bold)
+            }
+        }
+        Text("Share it", Modifier.padding(top = 10.dp), style = MaterialTheme.typography.labelLarge)
+        FlowRow(horizontalArrangement = Arrangement.Center, modifier = Modifier.fillMaxWidth()) {
+            ShareTarget.entries.forEach { t -> TextButton({ onShare(t) }, contentPadding = PaddingValues(horizontal = 8.dp)) { Text(t.label) } }
+        }
+    }
+}

@@ -78,6 +78,7 @@ dependencies {
     implementation(libs.billing)
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.analytics)
+    implementation(libs.play.review)
     debugImplementation(libs.compose.ui.tooling)
     testImplementation(libs.junit4)
     testImplementation(libs.truth)

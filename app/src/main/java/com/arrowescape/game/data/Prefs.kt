@@ -10,6 +10,8 @@ import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import kotlin.math.ln
+import kotlin.math.roundToInt
 
 enum class ThemeMode { SYSTEM, LIGHT, DARK }
 
@@ -29,6 +31,12 @@ data class Progress(
     val stars: Map<Int, Int> = emptyMap(), // level -> best stars
     val hintTokens: Int = START_TOKENS,
 ) {
+    /**
+     * Playful "Puzzle IQ" for the share card, not a real IQ: grows with levels cleared (log, so it slows down) and with
+     * average stars (skips count as 0). 80 at the start, about 116 after the tutorial, about 154 at level 500.
+     */
+    val iq get() = if (stars.isEmpty()) 80 else (80 + 10 * ln(1.0 + stars.size) + 4 * stars.values.average()).roundToInt().coerceAtMost(160)
+
     /** Highest playable level: one past the highest cleared. */
     val unlocked get() = (stars.keys.maxOrNull() ?: 0) + 1
 
@@ -45,6 +53,7 @@ class Prefs(context: Context) {
     private val style = stringPreferencesKey("style")
     private val tokens = intPreferencesKey("hint_tokens")
     private val adsRemoved = booleanPreferencesKey("ads_removed")
+    private val reviewAsked = booleanPreferencesKey("review_asked")
     private fun starsKey(level: Int) = intPreferencesKey("stars_$level")
 
     val settings: Flow<Settings> = store.data.map {
@@ -70,6 +79,13 @@ class Prefs(context: Context) {
     suspend fun setTheme(mode: ThemeMode) = store.edit { it[theme] = mode.name }
     suspend fun setStyle(s: Style) = store.edit { it[style] = s.name }
     suspend fun setAdsRemoved(on: Boolean) = store.edit { it[adsRemoved] = on }
+
+    /** True only the first time ever: the in-app review is asked for once per install. */
+    suspend fun markReviewAsked(): Boolean {
+        var first = false
+        store.edit { first = it[reviewAsked] != true; it[reviewAsked] = true }
+        return first
+    }
 
     /** Keeps the best result. A first 3-star clear earns a hint token. */
     suspend fun recordWin(level: Int, stars: Int) = store.edit {
