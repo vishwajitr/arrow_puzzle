@@ -75,19 +75,19 @@ class Prefs(context: Context) {
     suspend fun recordWin(level: Int, stars: Int) = store.edit {
         val old = it[starsKey(level)] ?: 0
         if (stars == 3 && old < 3) it[tokens] = (it[tokens] ?: Progress.START_TOKENS) + 1
-        if (stars > old) it[starsKey(level)] = stars
+        if (stars > old || it[starsKey(level)] == null) it[starsKey(level)] = stars // 0 stars = skipped, still unlocks the next
     }
 
     /** Reward for watching a rewarded ad. */
     suspend fun addToken() = store.edit { it[tokens] = (it[tokens] ?: Progress.START_TOKENS) + 1 }
 
-    /** Returns false when there was no token to spend. */
-    suspend fun spendToken(): Boolean {
+    /** Returns false (and spends nothing) when there are fewer than [n] tokens. */
+    suspend fun spendToken(n: Int = 1): Boolean {
         var ok = false
         store.edit {
             val t = it[tokens] ?: Progress.START_TOKENS
-            ok = t > 0
-            if (ok) it[tokens] = t - 1
+            ok = t >= n
+            if (ok) it[tokens] = t - n
         }
         return ok
     }

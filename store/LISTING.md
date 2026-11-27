@@ -1,6 +1,6 @@
 # Google Play listing – Arrow Escape
 
-Package ID: `com.vishwajit.arrowescape` (permanent once uploaded; the code package stays `com.arrowescape.game`) · Version 1.1.0 (code 3) · Upload file: `app/build/outputs/bundle/release/app-release.aab`
+Package ID: `com.vishwajit.arrowescape` (permanent once uploaded; the code package stays `com.arrowescape.game`) · Version 1.2.0 (code 4) · Upload file: `app/build/outputs/bundle/release/app-release.aab`
 
 ## 1. Create your upload key (once; only you should do this)
 

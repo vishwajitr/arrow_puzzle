@@ -56,6 +56,7 @@ import com.arrowescape.game.data.Settings
 import com.arrowescape.game.game.BoardEvent
 import com.arrowescape.game.game.GameViewModel
 import com.arrowescape.game.game.Levels
+import com.arrowescape.game.game.SKIP_COST
 import com.arrowescape.game.game.Status
 import kotlinx.coroutines.delay
 import kotlin.random.Random
@@ -78,11 +79,21 @@ fun GameScreen(vm: GameViewModel, ads: Ads, settings: Settings, onHome: () -> Un
     }
 
     // Stall detection: no correct move for STALL_MS (wrong taps don't count) -> pulse the hint, the best moment to offer it.
+    // Longer stall (SKIP_STALL_MS, even with a hint shown) -> also offer to skip. Hint first: it's cheaper and keeps the player solving.
     var stuck by remember { mutableStateOf(false) }
+    var veryStuck by remember { mutableStateOf(false) }
     LaunchedEffect(ui.level, ui.alive.count { it }, ui.hint, ui.status, ui.paused) {
         stuck = false
         if (ui.status == Status.PLAYING && ui.hint == null && !ui.paused) { delay(STALL_MS); stuck = true }
     }
+    LaunchedEffect(ui.level, ui.alive.count { it }, ui.status, ui.paused) {
+        veryStuck = false
+        if (ui.status == Status.PLAYING && !ui.paused) { delay(SKIP_STALL_MS); veryStuck = true }
+    }
+    // No skipping the tutorial (it teaches the rules) or the last level; needs an ad or SKIP_COST tokens to pay with.
+    val canSkip = ui.levelNumber in (Levels.TUTORIAL_LEVELS + 1) until Levels.TOTAL && (rewardedReady || ui.tokens >= SKIP_COST)
+    var skipAsk by remember { mutableStateOf(false) }
+    val skipTo = { viaAd: Boolean -> val n = ui.levelNumber; skipAsk = false; vm.skip(viaAd) { vm.load(n + 1) } }
     val pulse = if (stuck) rememberInfiniteTransition(label = "stuck")
         .animateFloat(1f, 1.08f, infiniteRepeatable(tween(600), RepeatMode.Reverse), label = "pulse").value else 1f
 
@@ -114,6 +125,7 @@ fun GameScreen(vm: GameViewModel, ads: Ads, settings: Settings, onHome: () -> Un
             if (ui.tokens == 0 && rewardedReady && ui.status == Status.PLAYING && ui.hint == null) TextButton(watchForHint, Modifier.scale(pulse)) {
                 Text(if (stuck) "Stuck? Watch an ad for a hint" else "Watch an ad for a hint", letterSpacing = 0.5.sp)
             }
+            if (canSkip && veryStuck && ui.status == Status.PLAYING) TextButton({ skipAsk = true }) { Text("Skip this level", letterSpacing = 0.5.sp) }
             Spacer(Modifier.height(16.dp)) // AdMob: keep banners clear of tappable controls
             AdBanner(ads)
         }
@@ -122,6 +134,21 @@ fun GameScreen(vm: GameViewModel, ads: Ads, settings: Settings, onHome: () -> Un
     }
 
     when {
+        skipAsk && canSkip -> AlertDialog(
+            onDismissRequest = { skipAsk = false },
+            title = { Text("Skip this level?") },
+            text = { Text("It counts as cleared with no stars. You can come back for the stars any time.") },
+            confirmButton = {
+                if (rewardedReady) Button(onClick = { ads.showRewarded { skipTo(true) } }) { Text("Watch ad") }
+                else Button(onClick = { skipTo(false) }) { Text("Use $SKIP_COST hints") }
+            },
+            dismissButton = {
+                Row {
+                    if (rewardedReady && ui.tokens >= SKIP_COST) TextButton(onClick = { skipTo(false) }) { Text("Use $SKIP_COST hints") }
+                    TextButton(onClick = { skipAsk = false }) { Text("Cancel") }
+                }
+            },
+        )
         ui.status == Status.WON -> WinDialog(
             stars = ui.stars,
             hasNext = ui.levelNumber < Levels.TOTAL,
@@ -139,8 +166,11 @@ fun GameScreen(vm: GameViewModel, ads: Ads, settings: Settings, onHome: () -> Un
             text = { Text(if (ui.tokens > 0) "Retry the level, or spend a hint token to keep going with one heart." else "Retry the level, or watch a short video to keep going with one heart.") },
             confirmButton = { Button(onClick = vm::restart) { Text("Retry") } },
             dismissButton = {
-                if (ui.tokens > 0) TextButton(onClick = vm::revive) { Text("Continue (1 hint)") }
-                else if (rewardedReady) TextButton(onClick = { ads.showRewarded(vm::reviveFree) }) { Text("Watch ad: +1 heart") }
+                Row {
+                    if (canSkip) TextButton(onClick = { skipAsk = true }) { Text("Skip") }
+                    if (ui.tokens > 0) TextButton(onClick = vm::revive) { Text("Continue (1 hint)") }
+                    else if (rewardedReady) TextButton(onClick = { ads.showRewarded(vm::reviveFree) }) { Text("Watch ad: +1 heart") }
+                }
             },
         )
         ui.paused -> AlertDialog(
@@ -158,6 +188,7 @@ fun GameScreen(vm: GameViewModel, ads: Ads, settings: Settings, onHome: () -> Un
 }
 
 private const val STALL_MS = 20_000L
+private const val SKIP_STALL_MS = 60_000L
 
 @Composable
 private fun RoundIcon(symbol: String, label: String, onClick: () -> Unit) {

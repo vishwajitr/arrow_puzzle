@@ -159,7 +159,7 @@ class Ads(private val activity: Activity) {
 
     private companion object {
         const val FIRST_LEVEL = 20 // ad-free start (tutorial + 10 levels): first impressions drive D1 retention
-        const val EVERY_N_LEVELS = 2
+        const val EVERY_N_LEVELS = 3
         const val COOLDOWN_MS = 60_000L // ponytail: one fixed cap shared by interstitial + app-open; tune from AdMob stats
         const val APP_OPEN_TTL_MS = 4 * 3_600_000L
     }

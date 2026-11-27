@@ -36,6 +36,9 @@ sealed interface BoardEvent {
     data class Bounce(val arrow: Int, val distance: Int) : BoardEvent
 }
 
+/** Skip costs twice a hint, so a hint stays the cheaper way through; the ad is free. */
+const val SKIP_COST = 2
+
 class GameViewModel(app: Application) : AndroidViewModel(app) {
     private val prefs = (app as App).prefs
     private val sfx = (app as App).sfx
@@ -127,6 +130,17 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         val g = game ?: return
         viewModelScope.launch {
             if (prefs.spendToken()) { g.revive(); publish(); log("revive", "source" to "token") }
+        }
+    }
+
+    /** Skips the level: it counts as cleared with 0 stars (replay it for stars). Costs [SKIP_COST] tokens unless paid by an ad. */
+    fun skip(viaAd: Boolean, then: () -> Unit) {
+        val n = _ui.value.levelNumber
+        viewModelScope.launch {
+            if (!viaAd && !prefs.spendToken(SKIP_COST)) return@launch
+            prefs.recordWin(n, 0)
+            log("level_skip", "source" to if (viaAd) "ad" else "token")
+            then()
         }
     }
 

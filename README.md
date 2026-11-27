@@ -62,9 +62,11 @@ The real IDs (`ARROW_ADMOB_*`) live in `~/.gradle/gradle.properties`, outside th
 | Unit | Where |
 |---|---|
 | Banner | Under the board on the puzzle screen (standard). On Home it is **collapsible** (opens larger, the player collapses it); AdMob forbids collapsible banners during gameplay |
-| Interstitial | On **Next** after every 2nd cleared level from level 20 (ad-free start), at most once per 60 s |
-| Rewarded | "Watch an ad for a hint" when out of hints (shows the hint at once; after 20 s without a correct move it pulses as "Stuck?"); "Watch ad: +1 heart" in the out-of-hearts dialog |
+| Interstitial | On **Next** after every 3rd cleared level from level 20 (ad-free start), at most once per 60 s |
+| Rewarded | "Watch an ad for a hint" when out of hints (shows the hint at once; after 20 s without a correct move it pulses as "Stuck?"); "Watch ad: +1 heart" in the out-of-hearts dialog; "Skip this level" (ad, or 2 hints) |
 | App open | When returning to the app (warm start), never on cold launch or right after another ad |
+
+**Skip level** (from level 11): offered after 60 s without a correct move, or in the out-of-hearts dialog. Pay with a rewarded ad or 2 hint tokens (a hint costs 1, so the hint stays the cheaper way through). A skipped level counts as cleared with 0 stars and can be replayed for stars. No interstitial follows a skip.
 
 **Remove ads** (`data/Billing.kt`): a one-time Play purchase, product id `remove_ads`. It turns off the banner, interstitials and app-open ads; rewarded videos stay because they are opt-in. Play's purchase list is re-read on every start and resume (that is the restore; Settings also has **Restore purchases**) and cached in DataStore for offline play. Refunds turn ads back on.
 
