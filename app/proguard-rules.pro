@@ -5,3 +5,6 @@
 # WorkManager (pulled in by the Ads SDK) creates its Room database by reflection (WorkDatabase_Impl's
 # no-arg constructor); R8 full mode strips it otherwise and the release build crashes at startup.
 -keep class * extends androidx.room.RoomDatabase { <init>(); }
+
+# review-ktx references a compile-time-only annotation from play-services-basement
+-dontwarn com.google.android.gms.common.annotation.NoNullnessRewrite
